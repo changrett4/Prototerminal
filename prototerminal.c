@@ -22,10 +22,17 @@ int execute_ls(char* arg ){
             printf("%s\n", ent->d_name);
         }
         closedir(dir);
-    } else {
-        perror("Error to open directory");
         return 1;
+    } else {
+        perror("Error");
+        return 0;
     }
+}
+
+void execute_pwd(){
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    printf("%s\n", cwd);
 }
 
 void initial_message(){
@@ -43,9 +50,18 @@ void take_input(char* buffer){
 }
 
 int execute_commands(int n_commands,char** comandos){
+    int result;
     for(int i=0;i<n_commands;i++){
         if(strcmp(comandos[i], "ls") == 0){
-            execute_ls((comandos[i + 1] == NULL) ? "." : comandos[i + 1]); //if ternario que verifica se o ls vem acompanhado de um diretorio ou é o atual
+             result =execute_ls((comandos[i + 1] == NULL) ? "." : comandos[i + 1]); //if ternario que verifica se o ls vem acompanhado de um diretorio ou é o atual
+
+             if(result==0){
+                 break; //esse break é necessário pois esse é o comportamento desse comando no linux
+             }
+        }
+        if(strcmp(comandos[i],"pwd")==0){
+            execute_pwd();
+            break; //esse break é necessário pois esse é o comportamento desse comando no linux
         }
 
     }

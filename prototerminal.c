@@ -6,15 +6,22 @@
 #include<dirent.h>
 #include<fcntl.h>
 #include<sys/types.h>
+#include <errno.h>
 #include<sys/wait.h>
 
 #define clear() printf("\033[H\033[J")
 #define MAX_LEN_LINE 150
 #define MAX_ARGS 10
 
+void get_actual_directory(char* cwd, size_t size){
+    if (getcwd(cwd, size) == NULL) {
+        perror("Error to get directory");
+    }
+}
 
 
 int execute_ls(char* arg ){
+
     DIR *dir;
     struct dirent *ent;
     if ((dir = opendir(arg)) != NULL) {
@@ -31,8 +38,23 @@ int execute_ls(char* arg ){
 
 void execute_pwd(){
     char cwd[1024];
-    getcwd(cwd, sizeof(cwd));
+    get_actual_directory(cwd, sizeof (cwd));
     printf("%s\n", cwd);
+}
+
+void execute_cd(char* dir){
+    char cwd[1024];
+    get_actual_directory(cwd, sizeof(cwd));
+    char oldpwd[1024];
+    strcpy(oldpwd, cwd);
+
+    int ret = chdir(dir);
+    if(ret == -1){
+        printf("Error to change directory: %s\n", strerror(errno));
+    } else {
+        get_actual_directory(cwd, sizeof(cwd));
+        printf("Current directory: %s\n", cwd);
+    }
 }
 
 void initial_message(){
@@ -63,6 +85,12 @@ int execute_commands(int n_commands,char** comandos){
             execute_pwd();
             break; //esse break é necessário pois esse é o comportamento desse comando no linux
         }
+        if(strcmp(comandos[i],"cd") ==0){
+            execute_cd(comandos[i+1]);
+        }
+        if(strcmp(comandos[i],"exit")==0){
+            exit(0);
+        }
 
     }
     return 0;
@@ -87,6 +115,7 @@ int get_separate_commands(char* buffer,char** commands){
         n_commands++;
         command = strtok(NULL, " ");
     }
+    commands[n_commands]=NULL;
     return n_commands;
 
 }
@@ -107,7 +136,6 @@ int main() {
     while(1){
         printf("> ");
         take_input(buffer);
-        printf("%s\n",buffer);
         n_commands = get_separate_commands(buffer,commands);
         if(n_commands==-1){
             continue;

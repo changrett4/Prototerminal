@@ -19,6 +19,19 @@ void get_actual_directory(char* cwd, size_t size){
     }
 }
 
+int exec_file(char** args){
+    char dot_bar[256] = "./";
+
+    if(args[0][0] != '.'){
+        strcat(dot_bar,args[0]);
+        args[0] = malloc(strlen(dot_bar) + 1);
+        strcpy(args[0], dot_bar);
+    }
+
+    execvp(args[0],args);
+    perror("Erro ao executar o programa");
+    return EXIT_FAILURE;
+}
 
 int execute_ls(char* arg ){
 
@@ -72,7 +85,7 @@ void take_input(char* buffer){
 }
 
 int execute_commands(int n_commands,char** comandos){
-    int result;
+    int result=-1;
     for(int i=0;i<n_commands;i++){
         if(strcmp(comandos[i], "ls") == 0){
              result =execute_ls((comandos[i + 1] == NULL) ? "." : comandos[i + 1]); //if ternario que verifica se o ls vem acompanhado de um diretorio ou é o atual
@@ -81,17 +94,34 @@ int execute_commands(int n_commands,char** comandos){
                  break; //esse break é necessário pois esse é o comportamento desse comando no linux
              }
         }
-        if(strcmp(comandos[i],"pwd")==0){
+        else if(strcmp(comandos[i],"pwd")==0){
             execute_pwd();
             break; //esse break é necessário pois esse é o comportamento desse comando no linux
         }
-        if(strcmp(comandos[i],"cd") ==0){
+        else if(strcmp(comandos[i],"cd") ==0){
             execute_cd(comandos[i+1]);
+            break;
+
         }
-        if(strcmp(comandos[i],"exit")==0){
+        else if(strcmp(comandos[i],"exit")==0){
             exit(0);
         }
-
+        else{
+            //cria um novo array para receber o executavel e seus argumentos
+            char* args[MAX_ARGS];
+            args[0] = comandos[i];
+            for(int j = 1; j < MAX_ARGS; j++){
+                if(comandos[i + j] != NULL){
+                    args[j] = comandos[i + j];
+                }
+                else{
+                    args[j] = NULL;
+                    break;
+                }
+            }
+            exec_file(args);
+            break;
+        }
     }
     return 0;
 }
@@ -128,7 +158,7 @@ void clear_commands(int n_commands,char **commands){
 }
 
 
-int main() {
+int main(int argc, char *argv[]) {
     char buffer[MAX_LEN_LINE];
     int n_commands;
     char **commands= malloc((MAX_ARGS+1)*sizeof (char*)) ;
